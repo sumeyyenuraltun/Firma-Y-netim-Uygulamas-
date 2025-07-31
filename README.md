@@ -1,3 +1,5 @@
+Authentication ile uygulmaya giriş sağlanıyor
+<img width="1890" height="859" alt="image" src="https://github.com/user-attachments/assets/e9198d60-d19b-4586-b844-913fcdbd421a" />
 Çalışılan Firmalara Yönelik Bilgiler
 <img width="1892" height="861" alt="image" src="https://github.com/user-attachments/assets/58b03e1a-3689-40bb-9483-d0f25909d2b8" />
 Çalışılan Firmalar
