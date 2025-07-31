@@ -1,0 +1,209 @@
+﻿@model FirmaYonetimWeb.Entities.BelediyeGorevModel
+
+
+
+<div class="d-flex align-items-center gap-2 mt-4">
+    <form asp-action="Index" method="post" class="d-flex align-items-center gap-2">
+        <select asp-for="SelectedBelediyeId" class="form-control" style="width:230px;" name="SelectedBelediyeId" onchange="this.form.submit()">
+            <option value="">Belediyeler</option>
+            @foreach (var belediye in Model.Belediyeler)
+            {
+                if (Model.SelectedBelediyeId == belediye.Id)
+                {
+                    <option value="@belediye.Id" selected="selected">@belediye.Ad</option>
+                }
+                else
+                {
+                    <option value="@belediye.Id">@belediye.Ad</option>
+                }
+            }
+
+        </select>
+
+    </form>
+    <button type="button" class="btn btn-warning ms-auto me-3" data-bs-toggle="modal" data-bs-target="#Modal1">
+        <i class="fa-solid fa-plus"></i>
+        Ekle
+    </button>
+
+</div>
+
+
+<h2 class="mt-3 text-center">Personeller</h2>
+
+@if (Model.BelediyePersonelleri!= null && Model.BelediyePersonelleri.Any())
+{
+    <table class="table mt-3">
+        <thead class="text-center">
+            <tr>
+                <th>Belediye</th>
+                <th>Personel Adı</th>
+                <th>E-Posta</th>
+                <th>Telefon</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var personel in Model.BelediyePersonelleri)
+            {
+                <tr class="text-center">
+
+                    <td class="align-middle">@personel?.belediye.Ad</td>
+                    <td class="align-middle">@personel.FullName</td>
+                    <td class="align-middle">@personel.Email</td>
+                    <td class="align-middle">@personel.PhoneNumber</td>
+                    <td class="align-middle">
+                        <form asp-action="DeletePersonel" method="post" class="d-flex gap-2 align-items-center">
+                            <button type="button" class="btn btn-primary btn-sm mb" data-bs-toggle="modal" data-bs-target="#Modal2"
+                                    data-id="@personel.Id"
+                                    data-ad="@personel.FullName"
+                                    data-telefon="@personel.PhoneNumber"
+                                    data-email="@personel.Email"
+                                    data-belediye="@personel.belediyeId">
+
+                                <i class="fa-solid fa-circle-user"></i>
+                            </button>
+
+                            <input type="hidden" name="id" value="@personel.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?');"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (Model.SelectedBelediyePersonel != 0)
+{
+    <p>Seçilen belediyeye ait personel bulunamadı.</p>
+}
+
+<div class="modal fade" id="Modal1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Personel Ekle</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreatePersonel" method="post">
+                <div class="modal-body">
+                   
+                    <div class="form-group mb-1">
+                        <label asp-for="belediyePersonel.FullName">Personel Adı</label>
+                        <input asp-for="belediyePersonel.FullName" class="form-control mt-1" />
+                        <span asp-validation-for="belediyePersonel.FullName" class="text-danger"></span>
+
+                    </div>
+
+                    <div class="form-group mb-1">
+
+                        <label asp-for="belediyePersonel.belediyeId">Belediye Adı</label>
+                        <select asp-for="belediyePersonel.belediyeId" class="form-control mt-1">
+                            <option value="">-- Belediyeler --</option>
+                            @foreach (var belediye in Model.Belediyeler)
+                            {
+                                <option value="@belediye.Id">@belediye.Ad</option>
+                            }
+                        </select>
+                        <span asp-validation-for="belediyePersonel.belediyeId" class="text-danger"></span>
+
+
+                    </div>
+
+                    <div>
+                        <label asp-for="belediyePersonel.Email">E-mail Adresi</label>
+                        <input asp-for="belediyePersonel.Email" class="form-control mt-1"/>
+                    </div>
+
+                    <div>
+                         <label asp-for="belediyePersonel.PhoneNumber">Telefon Numarası</label>
+                        <input asp-for="belediyePersonel.PhoneNumber" class="form-control mt-1"/>
+                    </div>
+                    
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="Modal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Güncelle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="EditPersonel" method="post">
+                <div class="modal-body">
+                    <input type="hidden" asp-for="belediyePersonel.Id" />
+
+                    <div class="form-group mb-1">
+                        <label asp-for="belediyePersonel.FullName">Personel Adı</label>
+                        <input asp-for="belediyePersonel.FullName" class="form-control mt-1"/>
+                    </div>
+
+                    <div class="form-group mb-1">
+
+                        <label asp-for="belediyePersonel.belediyeId">Belediye Adı</label>
+                        <select asp-for="belediyePersonel.belediyeId" class="form-control mt-1">
+                            <option value="">-- Belediyeler --</option>
+                            @foreach (var belediye in Model.Belediyeler)
+                            {
+                                <option value="@belediye.Id">@belediye.Ad</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label asp-for="belediyePersonel.Email">E-mail Adresi</label>
+                        <input asp-for="belediyePersonel.Email" class="form-control mt-1" />
+                    </div>
+                    
+                    <div class="form-group mb-1">
+                        <label asp-for="belediyePersonel.PhoneNumber">Telefon Numarası</label>
+                        <input asp-for="belediyePersonel.PhoneNumber" class="form-control mt-1" />
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+       var modal = document.getElementById('Modal2');
+       modal.addEventListener('show.bs.modal', function(event){
+        var button = event.relatedTarget;
+              var id = button.getAttribute('data-id');
+              var ad = button.getAttribute('data-ad');
+              var telefon = button.getAttribute('data-telefon');
+              var email = button.getAttribute('data-email');
+              var belediye = button.getAttribute('data-belediye');
+              modal.querySelector('select[name="belediyePersonel.belediyeId"]').value = belediye;
+             
+
+               modal.querySelector('input[name="belediyePersonel.Id"]').value = id;
+               modal.querySelector('input[name="belediyePersonel.FullName"]').value = ad;
+               modal.querySelector('input[name="belediyePersonel.PhoneNumber"]').value = telefon;
+               modal.querySelector('input[name="belediyePersonel.Email"]').value = email;
+
+
+       });
+    </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

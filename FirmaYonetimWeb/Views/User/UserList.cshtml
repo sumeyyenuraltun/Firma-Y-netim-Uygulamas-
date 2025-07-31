@@ -1,0 +1,211 @@
+﻿@using Microsoft.AspNetCore.Identity
+@model FirmaYonetimWeb.Entities.FirmaPersonel
+
+@{
+    ViewData["Title"] = "Kullanıcı Listesi";
+}
+
+@inject UserManager<AppUser> UserManager
+@{
+    var user = UserManager.GetUserAsync(User).Result;
+}
+
+<button type="button" class="btn btn-warning ms-auto me-3 mt-4" data-bs-toggle="modal" data-bs-target="#Modal1">
+        <i class="fa-solid fa-plus"></i>
+        Ekle
+</button>
+
+<h2 class="mt-3 text-center">Personeller</h2>
+
+@if (Model != null)
+{
+    <table class="table mt-3">
+        <thead class="text-center">
+            <tr>
+                <th>Personel Adı</th>
+                <th>Kullanıcı Adı</th>
+                <th>E-Posta</th>
+                <th>Telefon</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var personel in Model.users)
+            {
+                <tr class="text-center">
+
+                    <td class="align-middle">@personel.FullName</td>
+                    <td class="align-middle">@personel.UserName</td>
+                    <td class="align-middle">@personel.Email</td>
+                    <td class="align-middle">@personel.PhoneNumber</td>
+                    <td class="align-middle">
+                        <form asp-action="DeleteUser" method="post" class="d-flex gap-2 align-items-center">
+                            <button type="button" class="btn btn-primary btn-sm mb" data-bs-toggle="modal" data-bs-target="#EditModal"
+                                    data-id="@personel.Id"
+                                    data-userName="@personel.UserName"
+                                    data-telefon="@personel.PhoneNumber"
+                                    data-email="@personel.Email"
+                                    data-isadmin="@((await UserManager.IsInRoleAsync(personel, "Admin")).ToString().ToLower())">   
+
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+
+                            <input type="hidden" name="id" value="@personel.Id" />
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?');"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="Modal1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="Modal1">Personel Ekle</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="CreateUser" method="post">
+
+                    <div class="form-group mb-1">
+                        <label>Ad</label>
+                        <input asp-for="createUser.Ad" class="form-control mt-1" />
+                        <span asp-validation-for="createUser.Ad" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Soyad</label>
+                        <input asp-for="createUser.Soyad" class="form-control mt-1" />
+                        <span asp-validation-for="createUser.Soyad" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Kullanıcı Adı</label>
+                        <input asp-for="createUser.KullaniciAdi" class="form-control mt-1" />
+                        <span asp-validation-for="createUser.KullaniciAdi" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Email</label>
+                        <input asp-for="createUser.Email" class="form-control mt-1" />
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Telefon Numarası</label>
+                        <input asp-for="createUser.PhoneNumber" class="form-control mt-1" />
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Şifre</label>
+                        <input type="password" asp-for="createUser.Sifre" class="form-control mt-1" />
+                        <span asp-validation-for="createUser.Sifre" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Şifre Tekrar</label>
+                        <input type="password" asp-for="createUser.SifreTekrar" class="form-control mt-1" />
+                        <span asp-validation-for="createUser.SifreTekrar" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="form-group mb-1 form-check">
+                        <input type="checkbox" asp-for="createUser.IsAdmin" class="form-check-input" />
+                        <label class="form-check-label">Admin yap</label>
+                    </div>
+
+                
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+<!--Edit -->
+
+<div class="modal fade" id="EditModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="EditModalLabel">Personel Ekle</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="UpdateUser" method="post">
+            <div class="modal-body">
+               
+                    <input type="hidden" asp-for="updateUser.Id"/>
+                    <div class="form-group mb-1">
+                        <label>Kullanıcı Adı</label>
+                        <input asp-for="updateUser.KullaniciAdi" class="form-control mt-1" />
+                        <span asp-validation-for="createUser.KullaniciAdi" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Email</label>
+                        <input asp-for="updateUser.Email" class="form-control mt-1" />
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Telefon Numarası</label>
+                        <input asp-for="updateUser.PhoneNumber" class="form-control mt-1" />
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label>Şifre</label>
+                        <input type="password" asp-for="updateUser.Sifre" class="form-control mt-1" />
+                        <span asp-validation-for="updateUser.Sifre" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="form-group mb-1 form-check">
+                        <input type="checkbox" asp-for="updateUser.IsAdmin" class="form-check-input" />
+                        <label class="form-check-label">Admin yap</label>
+                    </div>
+             
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+            </div>
+             </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+            document.addEventListener('DOMContentLoaded', function(){
+            var editModal = document.getElementById('EditModal');
+            editModal.addEventListener('show.bs.modal', function(event){
+                var button = event.relatedTarget;
+                var id = button.getAttribute('data-id');
+                var userName = button.getAttribute('data-userName');
+                var email = button.getAttribute('data-email');
+                var phoneNumber = button.getAttribute('data-telefon');
+                var isAdmin = button.getAttribute('data-isadmin') === 'true';
+
+                editModal.querySelector('input[name="updateUser.Id"]').value = id;
+                editModal.querySelector('input[name="updateUser.KullaniciAdi"]').value = userName;
+                editModal.querySelector('input[name="updateUser.Email"]').value = email;
+                editModal.querySelector('input[name="updateUser.PhoneNumber"]').value = phoneNumber;
+                editModal.querySelector('input[name="updateUser.IsAdmin"]').checked = isAdmin;
+                editModal.querySelector('input[name="updateUser.Sifre"]').value = ''; 
+
+            });
+        });
+
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+ }

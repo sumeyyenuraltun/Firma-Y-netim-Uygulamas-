@@ -1,0 +1,797 @@
+﻿@using System.Text.Json
+@using Microsoft.AspNetCore.Identity
+@model FirmaYonetimWeb.Entities.BelediyeGorevModel
+
+@inject UserManager<AppUser> UserManager
+@{
+    var user = UserManager.GetUserAsync(User).Result;
+    var isAdmin = User.IsInRole("Admin"); 
+}
+
+
+<div class="d-flex align-items-center gap-2 mt-4">
+    <form asp-action="GorevFiltre" method="post" class="d-flex align-items-center gap-2">
+        <input type="hidden" name="ReturnView" value="GorevList" />
+
+        <select asp-for="SelectedBelediyeId" class="form-control" style="width:230px;" name="SelectedBelediyeId" onchange="this.form.submit()">
+            <option value="">Tüm Belediye Görevleri</option>
+            @foreach (var belediye in Model.Belediyeler)
+            {
+                if (Model.SelectedBelediyeId == belediye.Id)
+                {
+                    <option value="@belediye.Id" selected="selected">@belediye.Ad</option>
+                }
+                else
+                {
+                    <option value="@belediye.Id">@belediye.Ad</option>
+                }
+            }
+
+        </select>
+
+        <select asp-for="SelectedOnemDerecesi" class="form-control" style="width:150px;" name="SelectedOnemDerecesi" onchange="this.form.submit()">
+            <option value="">Önem Derecesi</option>
+            <option value="Düşük">Düşük</option>
+            <option value="Orta">Orta</option>
+            <option value="Yüksek">Yüksek</option>
+        </select>
+
+        <select asp-for="SelectedGorevDurumu" class="form-control" style="width:150px;" name="SelectedGorevDurumu" onchange="this.form.submit()">
+            <option value="">Görev Durumu</option>
+            <option value="Beklemede">Beklemede</option>
+            <option value="İşleme Alındı">İşleme Alındı</option>
+            <option value="Tamamlandı">Tamamlandı</option>
+            <option value="İptal">İptal</option>
+        </select>
+
+
+    </form>
+    
+        @if(isAdmin){
+        <button type="button" class="btn btn-warning ms-auto me-3" data-bs-toggle="modal" data-bs-target="#Modal1">
+            <i class="fa-solid fa-plus"></i>
+            Ekle
+        </button>
+        }
+       
+</div>
+
+<h2 class="mt-3 d-flex justify-content-center">Görev Listesi</h2>
+@if (Model.Gorevler != null && Model.Gorevler.Any())
+{
+    <table class="table mt-3">
+        <thead class="text-center">
+            <tr>
+                <th>Talep Tarihi</th>
+                <th>Belediye</th>
+                <th>Talep Eden Personel</th>
+                <th>Talep</th>
+                <th>Önem</th>
+                <th>Durum</th>
+                <th>İşleme Alınma Tarihi</th>
+                <th>Tamamlanma Tarihi</th>
+                <th>Görevi Oluşturan Kişi</th>
+                <th>Sorumlu</th>
+                <th>Not</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var gorev in Model.Gorevler)
+            {
+                <tr class="text-center">
+                    <td class="align-middle">@(gorev.GorevGelmeTarihi?.ToString("dd.MM.yyyy HH:mm"))</td>
+                    <td class="align-middle">@gorev.belediye?.Ad</td>
+                    <td class="align-middle">
+                         @Model.BelediyePersonelleri.FirstOrDefault(p => p.Id == gorev.BelediyePersonelId)?.FullName
+                        <button type="submit" class="badge bg-info text-decoration-none border-0" style="cursor:pointer;"
+                                data-bs-toggle="modal" data-bs-target="#PersonelModal" data-personelid="@gorev.BelediyePersonelId" data-email="@Model.BelediyePersonelleri.FirstOrDefault(p => p.Id == gorev.BelediyePersonelId)?.Email"
+                                data-phone="@Model.BelediyePersonelleri.FirstOrDefault(p => p.Id == gorev.BelediyePersonelId)?.PhoneNumber" data-personel-name="@Model.BelediyePersonelleri.FirstOrDefault(p => p.Id == gorev.BelediyePersonelId)?.FullName">
+                             <i class="fa-solid fa-circle-info"></i>
+                        </button>
+                    </td>
+                    <td class="align-middle">@gorev.Talep</td>
+                    <td class="align-middle">
+                        @{
+                            string onemClass = "bg-secondary";
+                            if (gorev.OnemDerecesi == "Düşük")
+                            {
+                                onemClass = "bg-success";
+                            }
+                            else if (gorev.OnemDerecesi == "Orta")
+                            {
+                                onemClass = "bg-warning";
+                            }
+                            else if (gorev.OnemDerecesi == "Yüksek")
+                            {
+                                onemClass = "bg-danger";
+                            }
+                        }
+                        <span class="badge @onemClass"
+                        @if (isAdmin)
+                        {
+                            <text>onclick="makeEditable(this, @gorev.Id, 'OnemDerecesi', '@gorev.OnemDerecesi', ['', 'Düşük', 'Orta', 'Yüksek'])"</text>
+                        }>
+                            @gorev.OnemDerecesi
+                        </span>
+
+                    </td>
+                    <td class="align-middle">
+                        @{
+                            string badgeClass = "bg-secondary";
+                            if (gorev.GorevDurumu == "Beklemede")
+                            {
+                                badgeClass = "bg-secondary";
+                            }
+                            else if (gorev.GorevDurumu == "İşleme Alındı")
+                            {
+                                badgeClass = "bg-warning";
+                            }
+                            else if (gorev.GorevDurumu == "Tamamlandı")
+                            {
+                                badgeClass = "bg-success";
+                            }
+                            else if (gorev.GorevDurumu == "İptal")
+                            {
+                                badgeClass = "bg-danger";
+                            }
+                        }
+                        <span class="badge @badgeClass" onclick="makeEditable(this, @gorev.Id, 'GorevDurumu', '@gorev.GorevDurumu', ['', 'Beklemede', 'İşleme Alındı', 'Tamamlandı', 'İptal'])">
+                            @gorev.GorevDurumu
+                        </span>
+
+                    </td>
+
+                    <td class="align-middle">
+                        @(gorev.IslemeAlinmaTarihi.HasValue ? gorev.IslemeAlinmaTarihi.Value.ToString("dd.MM.yyyy HH:mm") : "İşleme Alınmadı")
+                        @if (gorev.GorevDurumu == "İşleme Alındı")
+                        {
+                            <form asp-action="UpdateGorev" method="post" style="display:inline;">
+                                <input type="hidden" name="ReturnView" value="GorevList" />
+                                <input type="hidden" name="Id" value="@gorev.Id" />
+                              
+                                <input type="hidden" name="GorevDurumu" value="Tamamlandı" />
+                                <button type="submit" class="badge bg-success text-decoration-none border-0" style="cursor:pointer;">
+                                    <i class="fa-solid fa-circle-check"></i> Tamamla
+                                </button>
+                            </form>
+                        }
+                    </td>
+                    <td class="align-middle">@(gorev.GorevTamamlanmaTarihi.HasValue ? gorev.GorevTamamlanmaTarihi.Value.ToString("dd.MM.yyyy HH:mm") : "Tamamlanmadı")</td>
+                    <td class="align-middle">@gorev.GorevOlusturan?.FullName</td>
+                    <td class="align-middle">@gorev.GoreveAtanan?.FullName</td>
+                    <td class="align-middle">
+                        <button type="button" class="btn btn-success btn-sm d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#NotModal" data-talep="@gorev.Talep" data-onem="@gorev.OnemDerecesi" data-not="@gorev.Not" data-id="@gorev.Id" data-dosya='@(Html.Raw(JsonSerializer.Serialize(gorev.DosyaAdi)))'>
+                            Not
+                        </button>
+                    </td>
+                    <td class="align-middle">
+                        <form asp-action="DeleteGorev" method="post" class="d-flex gap-2 align-items-center">
+                            @if(isAdmin){
+                                <button type="button" class="btn btn-primary btn-sm mb" data-bs-toggle="modal" data-bs-target="#Modal2"
+                                        data-id="@gorev.Id"
+                                        data-talep="@gorev.Talep"
+                                        data-onem="@gorev.OnemDerecesi"
+                                        data-goreveatananid="@gorev.GoreveAtananId"
+                                        data-goreveatan="@gorev.GoreveAtanan?.FullName"
+                                        data-not="@gorev.Not"
+                                        data-dosya='@(Html.Raw(JsonSerializer.Serialize(gorev.DosyaAdi)))'>
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <input type="hidden" name="id" value="@gorev.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?');"><i class="fa-solid fa-trash"></i></button>
+
+                            }
+                           
+                        </form>
+
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else if (Model.SelectedBelediyeId != 0)
+{
+    <p>Seçilen belediyeye ait görev bulunamadı.</p>
+}
+<!--PERSONEL MODAL-->
+<div class="modal fade" id="PersonelModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Personel Bilgileri</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" asp-for="gorev.Id" />
+
+                <div>
+                    <label asp-for="gorev.BelediyePersonelId">Talep Eden Personel</label>
+                    <p id="modalPersonelName" class="form-control mt-1"></p>
+                </div>
+
+
+                <div>
+                    <label for="modalEmail" class="form-label">Email</label>
+                    <p id="modalEmail" class="form-control mt-1"></p>
+                </div>
+
+                <div>
+                    <label for="modalPhone" class="form-label">Telefon</label>
+                    <p id="modalPhone" class="form-control mt-1"></p>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--EKLE-->
+<div class="modal fade" id="Modal1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Görev Ekleme</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreateGorev" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="ReturnView" value="GorevList" />
+                <div class="modal-body">
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.Talep">Talep</label>
+                        <textarea asp-for="gorev.Talep" class="form-control mt-1" rows="2"></textarea>
+                        <span asp-validation-for="gorev.Talep" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.OnemDerecesi">Önem Derecesi</label>
+                        <select asp-for="gorev.OnemDerecesi" class="form-control mt-1">
+                            <option value="">-- Önem Derecesi --</option>
+                            <option value="Düşük">Düşük</option>
+                            <option value="Orta">Orta</option>
+                            <option value="Yüksek">Yüksek</option>
+                        </select>
+                        <span asp-validation-for="gorev.OnemDerecesi" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-1">
+
+                        <label asp-for="gorev.BelediyeId">Belediye Adı</label>
+                        <select asp-for="gorev.BelediyeId" class="form-control mt-1" id="selectBelediye">
+                            <option value="">-- Belediyeler --</option>
+                            @foreach (var belediye in Model.Belediyeler)
+                            {
+                                <option value="@belediye.Id">@belediye.Ad</option>
+                            }
+                        </select>
+                        <span asp-validation-for="gorev.BelediyeId" class="text-danger"></span>
+
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.BelediyePersonelId">Talep Eden Personel</label>
+                        <select asp-for="gorev.BelediyePersonelId" class="form-control mt-1" id="selectPersonel">
+                            <option value="">-- Lütfen Önce Belediye Seçiniz --</option>
+                        </select>
+                        <span asp-validation-for="gorev.BelediyePersonelId" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.Not">Not</label>
+                        <textarea asp-for="gorev.Not" class="form-control mt-1" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label class="control-label d-block">Dosya Yükleyiniz</label>
+                        <input multiple type="file" name="dosyalar" id="ekleModalDosyaInput" class="form-control-file mt-1" />
+                        <small id="ekleModalDosyaAdi" class="text-muted mt-1 d-block"></small>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!--GÜNCELLE-->
+<div class="modal fade" id="Modal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Atama</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="UpdateGorev" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="ReturnView" value="GorevList" />
+                <div class="modal-body">
+                    <input type="hidden" asp-for="gorev.Id" />
+                    <input type="hidden" asp-for="gorev.Talep" />
+
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.OnemDerecesi">Önem Derecesi</label>
+                        <select asp-for="gorev.OnemDerecesi" class="form-control mt-1">
+                            <option value="-">Önem Derecesi</option>
+                            <option value="Düşük">Düşük</option>
+                            <option value="Orta">Orta</option>
+                            <option value="Yüksek">Yüksek</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.GoreveAtananId">Sorumlu</label>
+                        <select asp-for="gorev.GoreveAtananId" class="form-control mt-1">
+                            <option value="">-- Sorumlular --</option>
+                            @foreach (var gorevli in Model.Kullanicilar)
+                            {
+                                <option value="@gorevli.Id">@gorevli.FullName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label asp-for="gorev.Not">Not</label>
+                        <textarea asp-for="gorev.Not" class="form-control mt-1" rows="2"></textarea>
+                    </div>
+
+                    <div class="form-group mb-1">
+                        <label class="control-label d-block">Dosya Yükleyiniz</label>
+                        <input multiple type="file" name="dosyalar" id="guncelleModalDosyaInput" class="form-control-file mt-1" />
+                        <small id="guncelleModalDosyaAdi" class="text-muted mt-1 d-block"></small>
+                    </div>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!--NOT-->
+<div class="modal fade" id="NotModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="NotModal">Not</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="UpdateGorev" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="ReturnView" value="GorevList" />
+                <div class="modal-body">
+                    <input type="hidden" asp-for="gorev.Id" />
+                    <input type="hidden" asp-for="gorev.Talep" />
+                    <input type="hidden" asp-for="gorev.OnemDerecesi" />
+
+                    <div class="form-group mb-1">
+                        @if(isAdmin){
+                           <textarea asp-for="gorev.Not" class="form-control mt-1" rows="5"></textarea>
+                        }
+                        else {
+                            <textarea asp-for="gorev.Not" class="form-control mt-1" rows="5" readonly></textarea>
+                        }
+                        
+                    </div>
+
+                    <div class="form-group mb-1">
+                        @if(isAdmin){
+                            <label class="control-label d-block">Dosya Yükleyiniz</label>
+                            <input multiple type="file" name="dosyalar" id="notModalDosyaInput" class="form-control-file mt-1" />
+                        }
+                        else{
+                            <h6 class="control-label d-block">Dosyalar</h6>
+                        }
+                        <small id="guncelleModalDosyaAdi2" class="text-muted mt-1 d-block"></small>
+                    </div>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    @if(isAdmin){
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+            function makeEditable(element, gorevId, fieldName, currentValue, options) {
+        const select = document.createElement('select');
+        select.className = 'form-select form-select-sm';
+        select.style.width = 'auto';
+        select.style.minWidth = '120px';
+
+        options.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option;
+            optionElement.textContent = option;
+            if (option === currentValue) {
+                optionElement.selected = true;
+            }
+            select.appendChild(optionElement);
+        });
+
+        select.onchange = function () {
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/Gorev/UpdateGorev';
+
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'Id';
+            idInput.value = gorevId;
+            form.appendChild(idInput);
+
+            const fieldInput = document.createElement('input');
+            fieldInput.type = 'hidden';
+            fieldInput.name = fieldName;
+            fieldInput.value = this.value;
+            form.appendChild(fieldInput);
+
+            const returnViewInput = document.createElement('input');
+            returnViewInput.type = 'hidden';
+            returnViewInput.name = 'ReturnView';
+            returnViewInput.value = 'GorevList'; 
+            form.appendChild(returnViewInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        };
+
+        element.parentNode.replaceChild(select, element);
+        select.focus();
+
+        select.onblur = function () {
+            element.textContent = currentValue == '' ? '-' : currentValue;
+            select.parentNode.replaceChild(element, select);
+        };
+    }
+</script>
+
+
+@section Scripts {
+    <script>
+
+        //EKLE MODAL
+             document.addEventListener('DOMContentLoaded', function() {
+            var modalEkle = document.getElementById('Modal1');
+            var fileInput = modalEkle.querySelector('#ekleModalDosyaInput');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function(event){
+                    var selectedFiles = event.target.files;
+                    var previewContainer = modalEkle.querySelector('#ekleModalDosyaAdi');
+                    previewContainer.innerHTML = '';
+
+                    Array.from(selectedFiles).forEach(function(file){
+                        var ext = file.name.split('.').pop().toLowerCase();
+
+                        var blobUrl = URL.createObjectURL(file); 
+
+                        if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+                            var img = document.createElement('img');
+                            img.src = blobUrl;
+                            img.style.maxWidth = '300px';
+                            img.className = "m-1 border";
+
+                            var linkResim = document.createElement('a');
+                            linkResim.href = blobUrl;
+                            linkResim.target = '_blank';
+
+                            linkResim.appendChild(img);
+                            previewContainer.appendChild(linkResim);
+                            previewContainer.appendChild(document.createElement('br'));
+                        } else {
+                            var link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.textContent = file.name;
+                            link.target = '_blank';
+                            previewContainer.appendChild(link);
+                            previewContainer.appendChild(document.createElement('br'));
+                        }
+                    });
+                });
+            } else {
+                console.error("file input bulunamadı!");
+            }
+        });
+
+
+
+            document.addEventListener('DOMContentLoaded', function() {
+            var modal = document.getElementById('Modal2');
+            var fileInput = modal.querySelector('#guncelleModalDosyaInput');
+
+            modal.addEventListener('show.bs.modal', function(event){
+            var button = event.relatedTarget;
+            var id = button.getAttribute('data-id');
+            var onemDerecesi = button.getAttribute('data-onem');
+            var not = button.getAttribute('data-not');
+            var goreveAtananId = button.getAttribute('data-goreveatananid');
+            var dosya = button.getAttribute('data-dosya');
+            var dosya = button.getAttribute('data-dosya');
+
+            modal.querySelector('input[name="gorev.Id"]').value = id;
+            modal.querySelector('select[name="gorev.OnemDerecesi"]').value = onemDerecesi;
+            modal.querySelector('select[name="gorev.GoreveAtananId"]').value = goreveAtananId;
+            modal.querySelector('textarea[name="gorev.Not"]').value = not;
+            var talep = button.getAttribute('data-talep');
+            modal.querySelector('input[name="gorev.Talep"]').value = talep;
+
+                var dosyaContainer = modal.querySelector('#guncelleModalDosyaAdi');
+                dosyaContainer.innerHTML = '';
+
+                var dosyaListesi = [];
+                try {
+                    dosyaListesi = JSON.parse(dosya);
+                } catch(e){
+                    console.error("Dosya listesi parse edilemedi",e);
+                }
+
+                if(dosyaListesi && dosyaListesi.length>0){
+                    dosyaListesi.forEach(function(fileName){
+                        var ext = fileName.split('.').pop().toLowerCase();
+
+                        if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+                            var linkResim = document.createElement('a');
+                            linkResim.href = '/uploads/'+fileName;
+                            linkResim.target = '_blank';
+
+                            var img = document.createElement('img');
+                            img.src = '/uploads/' + fileName;
+                            img.alt = fileName;
+                            img.style.maxWidth = '300px';
+                            img.className = "m-1 border";
+
+                            linkResim.appendChild(img);
+                            dosyaContainer.appendChild(linkResim);
+                            dosyaContainer.appendChild(document.createElement('br'));
+                        }
+                        else{
+                            var link = document.createElement('a');
+                            link.href = '/uploads/'+fileName;
+                            link.textContent = fileName;
+                            link.target = '_blank';
+                            dosyaContainer.appendChild(link);
+                            dosyaContainer.appendChild(document.createElement('br'));
+                        }
+                    });
+                } else {
+                    dosyaContainer.textContent = 'Yüklü dosya yok';
+                }
+            });
+
+
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function(event){
+                    var selectedFiles = event.target.files;
+                    var previewContainer = modal.querySelector('#guncelleModalDosyaAdi');
+                    previewContainer.innerHTML = '';
+
+                    Array.from(selectedFiles).forEach(function(file){
+                        var ext = file.name.split('.').pop().toLowerCase();
+                         var blobUrl = URL.createObjectURL(file);
+                        if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+                            var reader = new FileReader();
+                            reader.onload = function(e){
+                                var linkResim = document.createElement('a');
+                                linkResim.href = blobUrl;
+                                linkResim.target = '_blank';
+
+                                var img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.style.maxWidth = '300px';
+                                img.className = "m-1 border";
+
+                                linkResim.appendChild(img);
+                                previewContainer.appendChild(linkResim);
+                                previewContainer.appendChild(document.createElement('br'));
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            var blobUrl = URL.createObjectURL(file);
+                            var link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.textContent = file.name;
+                            link.target = '_blank';
+                            previewContainer.appendChild(link);
+                            previewContainer.appendChild(document.createElement('br'));
+                        }
+                    });
+                });
+            } else {
+                console.error("file input bulunamadı!");
+            }
+        });
+
+
+        // NOT MODAL
+            document.addEventListener('DOMContentLoaded', function() {
+            var modalNot = document.getElementById('NotModal');
+            var fileInput = modalNot.querySelector('#notModalDosyaInput');
+
+            modalNot.addEventListener('show.bs.modal', function(event){
+                var button = event.relatedTarget;
+                var id = button.getAttribute('data-id');
+                var dosya= button.getAttribute('data-dosya');
+                var not = button.getAttribute('data-not');
+                var talep = button.getAttribute('data-talep');
+                var onemDerecesi = button.getAttribute('data-onem');
+
+                modalNot.querySelector('input[name="gorev.Talep"]').value = talep;
+                modalNot.querySelector('input[name="gorev.Id"]').value = id;
+                modalNot.querySelector('textarea[name="gorev.Not"]').value = not;
+                modalNot.querySelector('input[name="gorev.OnemDerecesi"]').value = onemDerecesi;
+
+                var dosyaContainer = modalNot.querySelector('#guncelleModalDosyaAdi2');
+                dosyaContainer.innerHTML = '';
+
+                var dosyaListesi = [];
+                try {
+                    dosyaListesi = JSON.parse(dosya);
+                } catch(e){
+                    console.error("Dosya listesi parse edilemedi",e);
+                }
+
+                if(dosyaListesi && dosyaListesi.length>0){
+                    dosyaListesi.forEach(function(fileName){
+                        var ext = fileName.split('.').pop().toLowerCase();
+                        if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+                            var linkResim = document.createElement('a');
+                            linkResim.href = '/uploads/'+fileName;
+                            linkResim.target = '_blank';
+
+                            var img = document.createElement('img');
+                            img.src = '/uploads/' + fileName;
+                            img.alt = fileName;
+                            img.style.maxWidth = '300px';
+                            img.className = "m-1 border";
+
+                            linkResim.appendChild(img);
+                            dosyaContainer.appendChild(linkResim);
+                            dosyaContainer.appendChild(document.createElement('br'));
+                        }
+                        else{
+                            var link = document.createElement('a');
+                            link.href = '/uploads/'+fileName;
+                            link.textContent = fileName;
+                            link.target = '_blank';
+                            dosyaContainer.appendChild(link);
+                            dosyaContainer.appendChild(document.createElement('br'));
+                        }
+                    });
+                } else {
+                    dosyaContainer.textContent = 'Yüklü dosya yok';
+                }
+            });
+
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function(event){
+                    var selectedFiles = event.target.files;
+                    var previewContainer = modalNot.querySelector('#guncelleModalDosyaAdi2');
+                    previewContainer.innerHTML = '';
+
+                    Array.from(selectedFiles).forEach(function(file){
+                        var ext = file.name.split('.').pop().toLowerCase();
+                         var blobUrl = URL.createObjectURL(file);
+                        if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+                            var reader = new FileReader();
+                            reader.onload = function(e){
+                                var linkResim = document.createElement('a');
+                                linkResim.href = blobUrl;
+                                linkResim.target = '_blank';
+
+                                var img = document.createElement('img');
+                                img.src = e.target.result;
+                                img.style.maxWidth = '300px';
+                                img.className = "m-1 border";
+
+                                linkResim.appendChild(img);
+                                previewContainer.appendChild(linkResim);
+                                previewContainer.appendChild(document.createElement('br'));
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            var blobUrl = URL.createObjectURL(file);
+                            var link = document.createElement('a');
+                            link.href = blobUrl;
+                            link.textContent = file.name;
+                            link.target = '_blank';
+                            previewContainer.appendChild(link);
+                            previewContainer.appendChild(document.createElement('br'));
+                        }
+                    });
+                });
+            } else {
+                console.error("file input bulunamadı!");
+            }
+        });
+
+
+            var ModalPersonel = document.getElementById('PersonelModal');
+            ModalPersonel.addEventListener('show.bs.modal', function(event){
+            var button = event.relatedTarget;
+            var id = button.getAttribute('data-personelid');
+            var email = button.getAttribute('data-email');
+            var telefon = button.getAttribute('data-phone');
+            var isim = button.getAttribute('data-personel-name');
+
+
+            ModalPersonel.querySelector('#modalPersonelName').textContent = isim;
+            ModalPersonel.querySelector('#modalEmail').textContent = email || '';
+            ModalPersonel.querySelector('#modalPhone').textContent = telefon || '';
+
+        });
+
+            document.addEventListener('DOMContentLoaded', function() {
+            var belediyeSelect = document.getElementById('selectBelediye');
+            var personelSelect = document.getElementById('selectPersonel');
+
+            belediyeSelect.addEventListener('change', function() {
+                var selectedBelediyeId = this.value;
+
+                personelSelect.innerHTML = '<option value="">-- Personeller --</option>';
+
+                if (selectedBelediyeId && selectedBelediyeId !== "0") {
+                    fetch('/Gorev/GetPersonelByBelediye?id=' + selectedBelediyeId)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.length > 0) {
+                                data.forEach(function(personel) {
+                                    var option = document.createElement('option');
+                                    option.value = personel.id;
+                                    option.textContent = personel.fullName;
+                                    personelSelect.appendChild(option);
+                                });
+                            } else {
+                                var option = document.createElement('option');
+                                option.textContent = 'Bu belediyeye ait personel bulunmamaktadır.';
+                                option.disabled = true;
+                                personelSelect.appendChild(option);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Personeller yüklenirken hata oluştu:', error);
+                        });
+                }
+                
+            });
+
+           personelSelect.addEventListener('focus', function(event) {
+                if (belediyeSelect.value==="") {
+
+                    var firstOption = this.querySelector('option');
+                    if(firstOption){
+                        firstOption.textContent = 'Lütfen önce bir belediye seçiniz';
+                    }
+                }
+            });
+        });
+
+
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+
+
+

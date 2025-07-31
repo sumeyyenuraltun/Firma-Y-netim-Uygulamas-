@@ -1,0 +1,28 @@
+﻿@model List<FirmaYonetimWeb.Models.BelediyePersonel>
+
+@if (Model != null && Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Personel Adı</th>
+                <th>E-Posta</th>
+                <th>Telefon</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var personel in Model)
+            {
+                <tr>
+                    <td>@personel.FullName</td>
+                    <td>@personel.Email</td>
+                    <td>@personel.PhoneNumber</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div>Seçilen belediyeye ait personel bulunamadı.</div>
+}

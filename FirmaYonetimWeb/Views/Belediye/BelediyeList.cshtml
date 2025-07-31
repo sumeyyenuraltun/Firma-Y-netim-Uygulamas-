@@ -1,0 +1,159 @@
+﻿@model FirmaYonetimWeb.Entities.BelediyeGorevModel
+
+@{
+    ViewData["Title"] = "Belediye List";
+}
+
+<div class="m-4" style="width:50%">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#EkleBelediyeModal">
+           <i class="fa-solid fa-plus"></i>
+           Belediye Ekle
+        </button>
+    
+    <div class="bg-succes text-white "><b>Belediye Listesi</b></div>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Belediye Adı</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Belediyeler)
+            {
+                <tr>
+                    <td class="col-1">@item.Id</td>
+                    <td class="col-8">@item.Ad</td>
+                    <td class="col-4">
+
+                        <form asp-action="DeleteBelediye" method="post">
+                            <button type="button" class="btn btn-success btn-sm" onclick="PersonelList(@item.Id)">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </button>
+                          
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#EditBelediyeModal" data-belediye="@item.Ad" data-id="@item.Id">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+
+                           <input type="hidden" name="id" value="@item.Id"/>
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Silmek istediğinize emin misiniz?');"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                      
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
+
+
+<!--personel div-->
+<div class="modal fade modal-lg" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Belediye Personelleri</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+             
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--belediye edit-->
+<div class="modal fade modal" id="EditBelediyeModal" tabindex="-1" aria-labelledby="EditBelediyeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Edit" method="post">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="EditBelediyeModalLabel">Belediye Güncelle</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editBelediyeId" name="Id" />
+                    <div class="form-group mb-2">
+                        <label for="editBelediyeAd">Belediye Adı</label>
+                        <input type="text" class="form-control" id="editBelediyeAd" name="Ad" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Kaydet</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!--Ekle Belediye Modal-->
+<div class="modal fade modal" id="EkleBelediyeModal" tabindex="-1" aria-labelledby="EkleBelediyeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="CreateBelediye" method="post">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="EkleBelediyeModalLabel">Belediye Ekle</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editBelediyeId" name="Id" />
+                    <div class="form-group mb-2">
+                        <label for="editBelediyeAd">Belediye Adı</label>
+                        <input type="text" class="form-control" id="editBelediyeAd" name="Ad" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Kaydet</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+         function PersonelList(belediyeId) {
+        $('#exampleModal').modal('show');
+
+        $.ajax({
+            url: '/Belediye/BelediyePersonelList',
+            type: 'POST',
+            data: { belediyeId: belediyeId },
+            success: function(data) {
+                $('#modalContent').html(data);
+            },
+            error: function() {
+                $('#modalContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        Personeller yüklenirken hata oluştu.
+                    </div>
+                `);
+            }
+        });
+    }
+
+        var belediyeModal = document.getElementById('EditBelediyeModal');
+
+        belediyeModal.addEventListener('show.bs.modal', function(event){
+        var button = event.relatedTarget;
+        var belediyeAd = button.getAttribute('data-belediye');
+        var belediyeId = button.getAttribute('data-id');
+
+        belediyeModal.querySelector('#editBelediyeAd').value = belediyeAd;
+        belediyeModal.querySelector('#editBelediyeId').value = belediyeId;
+    });
+
+
+    
+
+</script>

@@ -1,0 +1,73 @@
+﻿@model List<FirmaYonetimWeb.Models.Audit>
+@using Newtonsoft.Json
+
+@{
+    ViewData["Title"] = "Güncelleme Geçmişi";
+    
+}
+
+@if (Model != null && Model.Any())
+{
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Tarih</th>
+                <th>Değişen Alan</th>
+                <th>Eski Değer</th>
+                <th>Yeni Değer</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in Model)
+            {
+                var affectedColumns = string.Empty;
+                if (!string.IsNullOrEmpty(log.AffectedColumns) && log.AffectedColumns != "null")
+                {
+                    var columns = JsonConvert.DeserializeObject<List<string>>(log.AffectedColumns);
+                    affectedColumns = string.Join(", ", columns);
+                }
+
+                var oldValuesText = "";
+                if (!string.IsNullOrEmpty(log.OldValues) && log.OldValues != "null")
+                {
+                    var oldDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(log.OldValues);
+                    foreach (var kvp in oldDict)
+                    {
+                        var value = kvp.Value?.ToString();
+                        if (kvp.Key == "UpdatedAt" && DateTime.TryParse(value, out var dt))
+                        {
+                            value = dt.ToString("yyyy-MM-dd");
+                        }
+                        oldValuesText += $"{kvp.Key}: {value} ";
+                    }
+                }
+
+                var newValuesText = "";
+                if (!string.IsNullOrEmpty(log.NewValues) && log.NewValues != "null")
+                {
+                    var newDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(log.NewValues);
+                    foreach (var kvp in newDict)
+                    {
+                        var value = kvp.Value?.ToString();
+                        if (kvp.Key == "UpdatedAt" && DateTime.TryParse(value, out var dt))
+                        {
+                            value = dt.ToString("yyyy-MM-dd");
+                        }
+                        newValuesText += $"{kvp.Key}: {value} ";
+                    }
+                }
+                <tr>
+                    <td>@log.DateTime.ToString("g")</td>
+                    <td>@affectedColumns</td>
+                    <td>@oldValuesText</td>
+                    <td>@newValuesText</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info mt-3">Geçmiş kaydı bulunamadı.</div>
+}
+

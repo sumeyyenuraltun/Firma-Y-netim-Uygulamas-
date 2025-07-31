@@ -1,0 +1,280 @@
+﻿@model FirmaYonetimWeb.Models.WizardView
+
+@{
+    ViewData["Title"] = "Adım Adım Form";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<form asp-action="Index" asp-controller="Wizard" method="post" id="wizardForm" onsubmit="alert('Form submit ediliyor!'); return true;">
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+        <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5>Adım Adım Belediye Bilgisi</h5>
+            </div>
+            <div class="card-body">
+                <!-- Step 1 -->
+                <div class="step" id="step1">
+                    <h6>1. Belediye Seçiniz</h6>
+                    <select asp-for="SelectedBelediyeId" class="form-select" >
+                        <option value="">--Belediye Seçin--</option>
+                        @foreach (var b in Model.Belediyeler)
+                        {
+                            <option value="@b.Id">@b.Ad</option>
+                        }
+                    </select>
+                    <div class="footer">
+                    <button type="button" class="btn btn-primary mt-3" onclick="nextStep(2)">İleri</button>
+                     </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="step d-none" id="step2">
+                    <h6>2. Kaynak Türü Seçiniz</h6>
+                    <select asp-for="SelectedKaynakTuruId" class="form-select">
+                        <option value="">--Kaynak Türü Seçin--</option>
+                        @foreach (var k in Model.KaynakTurleri)
+                        {
+                            <option value="@k.Id">@k.Ad</option>
+                        }
+                    </select>
+                    <div class="footer">
+                                <button type="button" class="btn btn-secondary mt-3" onclick="prevStep(1)">Geri</button>
+                                <button type="button" class="btn btn-primary mt-3" onclick="nextStep(3)">İleri</button>
+                    </div>
+                    
+                </div>
+
+                <!-- Step 3 -->
+                <div class="step d-none" id="step3-vpn">
+                    <h6>VPN türü seçiniz</h6>
+                    <select asp-for="SelectedVPNAltTuruId" class="form-select" >
+                        <option value="">--VPN Türü Seçin--</option>
+                        @foreach (var k in Model.VPNAltTuruleri){
+                            <option value="@k.Id">@k.Ad</option>
+                        }
+                    </select>
+                    <div class="footer">
+                                <button type="button" class="btn btn-secondary mt-3" onclick="prevStep(1)">Geri</button>
+                                <button type="button" class="btn btn-primary mt-3" onclick="nextStep(4)">İleri</button>
+                    </div>
+                   
+                </div>
+
+                <!--giris-->
+           
+               <div class="step d-none" id="step3-giris">
+                     <h6>Giriş Bilgileri</h6>
+                     <input asp-for="KullaniciAdi" class="form-control mb-2" placeholder="Kullanıcı Adı" id="kullanici-adi" />
+                     <span asp-validation-for="KullaniciAdi" class="text-danger"></span>
+                     <input asp-for="Sifre" type="password" class="form-control mb-2" placeholder="Şifre" />
+                      <span asp-validation-for="Sifre" class="text-danger"></span>
+                
+                     <input asp-for="IP" class="form-control mb-2" placeholder="IP" id="IPField" style="display:none;" />
+                     <span asp-validation-for="IP" class="text-danger"></span>
+                     <input asp-for="ServiceEndpoint" class="form-control mb-2" placeholder="Service Endpoint" id="serviceField" style="display:none;" />
+                     <span asp-validation-for="ServiceEndpoint" class="text-danger"></span>
+
+                     <select class="form-select" asp-for="ServiceName" id="serviceNameField">
+                                <option value="">--Service Türü Seçin--</option>
+                                <option value="MAKS">MAKS</option>
+                                <option value="MEGSIS">MEGSIS</option>
+
+                     </select>
+                     <span asp-validation-for="ServiceName" class="text-danger"></span>
+
+                     <input asp-for="Port" class="form-control mb-2" placeholder="Port" id ="PortField" style="display: none"/>
+                     <span asp-validation-for="Port" class="text-danger"></span>
+                     <input asp-for="Host" class="form-control mb-2" placeholder="Host" id="HostField" style="display:none;" />
+                      <span asp-validation-for="Host" class="text-danger"></span>
+                     <input asp-for ="Kod" class="form-control mb-2" placeholder="Any Kodu" id="KodField" style="display: none" />
+                      <span asp-validation-for="Kod" class="text-danger"></span>
+                            <div class="form-check mb-2" id="checkDefault">
+                          <input asp-for="Dogrulama" class="form-check-input" type="checkbox"/>
+                          <label class="form-check-label" for="checkDefault">
+                             Doğrulama
+                          </label>
+                     </div>
+                     <div class="footer">
+                                <button type="button" class="btn btn-secondary mt-3" onclick="prevStep(2)">Geri</button>
+
+                                <button type="submit" class="btn btn-success mt-3">Kaydet</button>
+                     </div>
+                    
+             </div>
+
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+</form>
+
+<script>
+        function clearValidation(){
+        var validator = $('#wizardForm').validate();
+        validator.resetForm();  
+    
+        $('.text-danger').text('');
+
+   
+        $('[name]').each(function(){
+            var name = $(this).attr('name');
+            if (validator.settings.rules[name]) {
+                validator.settings.rules[name] = {};
+            }
+        });
+
+        document.querySelector('[name="KullaniciAdi"]').removeAttribute('required');
+        document.querySelector('[name="Sifre"]').removeAttribute('required');
+        document.querySelector('[name="IP"]').removeAttribute('required');
+        document.querySelector('[name="Port"]').removeAttribute('required');
+        document.querySelector('[name="ServiceEndpoint"]').removeAttribute('required');
+        document.querySelector('[name="ServiceName"]').removeAttribute('required');
+        document.querySelector('[name="Kod"]').removeAttribute('required');
+    }
+
+       
+        function nextStep(step) {
+        clearValidation();
+        const kaynakTuruId = document.querySelector('[name="SelectedKaynakTuruId"]').value;
+   
+        document.querySelectorAll('.step').forEach(el => el.classList.add('d-none'));
+
+        if (step === 2) {
+            document.getElementById('step2').classList.remove('d-none');
+            document.querySelector('[name="SelectedKaynakTuruId"]').setAttribute('required', '');
+        }
+        else if (step === 3) {
+        if (kaynakTuruId === "1") {
+        document.getElementById('step3-vpn').classList.remove('d-none');
+        document.querySelector('[name="SelectedVPNAltTuruId"]').setAttribute('required', '');
+
+        document.getElementById('HostField').style.display = 'block';
+        document.getElementById('IPField').style.display = 'block';
+        document.getElementById('PortField').style.display = 'block';
+        document.getElementById('checkDefault').style.display = 'block';
+
+        document.getElementById('kullanici-adi').style.display = 'block';
+        document.querySelector('[name="KullaniciAdi"]').setAttribute('required', '');
+        document.querySelector('[name="Sifre"]').setAttribute('required', '');
+
+        document.getElementById('serviceField').style.display = 'none';
+        document.getElementById('serviceNameField').style.display = 'none';
+        document.getElementById('KodField').style.display = 'none';
+
+        document.querySelector('[name="ServiceEndpoint"]').removeAttribute('required');
+        document.querySelector('[name="ServiceName"]').removeAttribute('required');
+        document.querySelector('[name="Kod"]').removeAttribute('required');
+
+        document.querySelector('[name="IP"]').setAttribute('required', '');
+        document.querySelector('[name="Port"]').setAttribute('required', '');
+    }
+
+
+            else { 
+                document.getElementById('step3-giris').classList.remove('d-none');
+
+                if (kaynakTuruId === "3") { 
+                    document.getElementById('KodField').style.display = 'block';
+                    document.querySelector('[name="Kod"]').setAttribute('required', '');
+
+                    document.getElementById('kullanici-adi').style.display = 'none';
+                    document.querySelector('[name="KullaniciAdi"]').removeAttribute('required');
+                    document.querySelector('[name="Sifre"]').removeAttribute('required');
+                } else {
+                    document.getElementById('KodField').style.display = 'none';
+                    document.getElementById('kullanici-adi').style.display = 'block';
+                    document.querySelector('[name="KullaniciAdi"]').setAttribute('required', '');
+                    document.querySelector('[name="Sifre"]').setAttribute('required', '');
+                    document.querySelector('[name="Kod"]').removeAttribute('required');
+                }
+
+                   if (["6", "5"].includes(kaynakTuruId)) {  
+        document.getElementById('IPField').style.display = 'block';
+        document.getElementById('PortField').style.display = 'block';
+
+        document.querySelector('[name="IP"]').setAttribute('required', '');
+        document.querySelector('[name="Port"]').setAttribute('required', '');
+    } else if (kaynakTuruId === "4") {  
+        document.getElementById('IPField').style.display = 'block';
+        document.getElementById('PortField').style.display = 'none';
+
+        document.querySelector('[name="IP"]').setAttribute('required', '');
+        document.querySelector('[name="Port"]').removeAttribute('required');
+    } else {
+        document.getElementById('IPField').style.display = 'none';
+        document.getElementById('PortField').style.display = 'none';
+
+        document.querySelector('[name="IP"]').removeAttribute('required');
+        document.querySelector('[name="Port"]').removeAttribute('required');
+    }
+
+
+                document.getElementById('HostField').style.display = 'none';
+
+                if (kaynakTuruId === "2") {  
+                    document.getElementById('serviceField').style.display = 'block';
+                    document.getElementById('serviceNameField').style.display = 'block';
+
+                    document.querySelector('[name="ServiceEndpoint"]').setAttribute('required', '');
+                    document.querySelector('[name="ServiceName"]').setAttribute('required', '');
+                } else {
+                    document.getElementById('serviceField').style.display = 'none';
+                    document.getElementById('serviceNameField').style.display = 'none';
+
+                    document.querySelector('[name="ServiceEndpoint"]').removeAttribute('required');
+                    document.querySelector('[name="ServiceName"]').removeAttribute('required');
+                }
+
+                if (kaynakTuruId === "4") {
+                    document.getElementById('checkDefault').style.display = 'block';
+                } else {
+                    document.getElementById('checkDefault').style.display = 'none';
+                }
+            }
+        }
+        else if (step === 4) {
+            document.getElementById('step3-giris').classList.remove('d-none');
+            document.getElementById('serviceNameField').style.display = 'none';
+            document.getElementById('serviceField').style.display = 'none';
+            document.getElementById('IPField').style.display = 'block';
+            document.getElementById('HostField').style.display = 'block';
+            document.getElementById('PortField').style.display = 'block';
+
+            document.querySelector('[name="KullaniciAdi"]').setAttribute('required', '');
+            document.querySelector('[name="Sifre"]').setAttribute('required', '');
+            document.querySelector('[name="IP"]').setAttribute('required', '');
+        }
+    }
+
+    function prevStep(step) {
+        clearValidation();
+        const kaynakTuruId = document.querySelector('[name="SelectedKaynakTuruId"]').value;
+
+        document.querySelectorAll('.step').forEach(el => el.classList.add('d-none'));
+
+        if (step === 1) {
+            document.getElementById('step1').classList.remove('d-none');
+        }
+        else if (step === 2) {
+            document.getElementById('step2').classList.remove('d-none');
+        }
+        else if (step === 3) {
+            if (kaynakTuruId === "1") {
+                document.getElementById('step3-vpn').classList.remove('d-none');
+            } else {
+                document.getElementById('step2').classList.remove('d-none');
+            }
+        }
+    }
+</script>
+
+@section Scripts{
+@{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+}
+}

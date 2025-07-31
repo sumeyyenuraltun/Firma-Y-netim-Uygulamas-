@@ -1,0 +1,38 @@
+﻿@model FirmaYonetimWeb.Entities.SignInModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = "_Layout";
+}
+
+<form asp-action="SignIn" method="post">
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div style="width: 300px;">
+
+            <div class="d-flex justify-content-center mb-3">
+               <h3>Giriş Yap</h3>
+            </div>
+            <div>
+                <label>Kullanıcı Adı:</label>
+                <span class="text-danger" asp-validation-for="@Model.KullaniciAdi"></span>
+                <input asp-for="@Model.KullaniciAdi" class="form-control" />
+            </div>
+
+            <div>
+                <label>Şifre:</label>
+                <span class="text-danger" asp-validation-for="@Model.Sifre"></span>
+                <input type="password" asp-for="@Model.Sifre" class="form-control" />
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" asp-for="RememberMe" class="form-check-input" />
+                <label class="form-check-label" asp-for="RememberMe">Beni Hatırla</label>
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <button type="submit" class="btn btn-primary">Giriş Yap</button>
+            </div>
+
+            <div class="text-danger mt-2" asp-validation-summary="ModelOnly"></div>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,1293 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Newtonsoft.Json
+@model FirmaYonetimWeb.Models.HomeView
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+@inject UserManager<AppUser> UserManager
+@{
+    var user = UserManager.GetUserAsync(User).Result;
+    var isAdmin = User.IsInRole("Admin");
+}
+<div class="d-flex align-items-center gap-2 mt-4">
+    <form asp-action="Index" method="get" class="d-flex align-items-center gap-2 ">
+        <select name="selectedBelediyeId" class="form-select" style="width:250px;" onchange="this.form.submit()">
+            <option selected>Belediye Seçiniz</option>
+            @foreach (var item in Model.Belediyeler)
+            {
+                <option value="@item.Id">@item.Ad</option>
+            }
+
+        </select>
+    </form>
+
+    <a class="btn btn-warning d-flex align-items-center gap-1" asp-area="" asp-controller="Wizard" asp-action="Index">
+        <i class="fa-solid fa-plus"></i>
+        Ekle
+    </a>
+
+</div>
+
+
+<div class="d-flex flex-wrap justify-content-center gab-2 mt-2 mr-4">
+    <!--1.kart-->
+    <div class="card m-3" style="width: 25rem;  height:400px;">
+
+        <div class="card-header">
+            <h5 class="card-title text-center">
+                <i class="fa-solid fa-shield-halved"></i>
+                VPN
+            </h5>
+        </div>
+        <!--navs tab-->
+
+        <div class="card-body p-2">
+            <ul class="nav nav-underline justify-content-center mb-3" id="vpnTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="openvpn-tab" data-bs-toggle="tab" data-bs-target="#openvpn" type="button" role="tab">OpenVPN</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="forti-tab" data-bs-toggle="tab" data-bs-target="#forti" type="button" role="tab">FortiClient</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="windows-tab" data-bs-toggle="tab" data-bs-target="#windows" type="button" role="tab">Windows VPN</button>
+                </li>
+            </ul>
+
+
+            <!-- içerik-->
+            <div class="tab-content" id="vpnTabContent" style="height:215px; overflow-y: auto">
+
+                <!-- openvpn -->
+                <div class="tab-pane fade show active" id="openvpn" role="tabpanel" aria-labelledby="openvpn-tab">
+                    <form asp-action="UpdateVPN" method="post">
+                        <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                        <ul class="list-group">
+                            @{
+                                int kaynakIndex = 0;
+                                int vpnIndex = 0;
+                            }
+                            @foreach (var item in Model.BelediyeOpenVPNKayitlari)
+                            {
+                                foreach (var giris in item.KaynakGirisler)
+                                {
+                                    <li class="list-group-item list-group-item-action mb-1">
+
+                                        <input type="hidden" name="kaynakGirisVm[@kaynakIndex].Id" value="@giris.Id" />
+                                        <input type="checkbox" name="selectedVPNKayit" value="@giris.Id" class="btn-check" id="vpn-check-@giris.Id" autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm"
+                                               for="vpn-check-@giris.Id"
+                                               style="padding: 1px 4px; border-width: 1px;">
+                                            <i class="fa-solid fa-trash fa-xs"></i>
+                                        </label>
+
+                                        <div class="mb-2">
+                                            <div class="row mb-1">
+                                                <div class="col text-center">
+                                                    <h6>Kullanıcı Adı:</h6>
+                                                </div>
+                                                <div class="col text-center">
+                                                    <h6>Şifre:</h6>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                                    class="btn btn-outline-secondary btn-sm p-1">
+                                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm" />
+                                                </div>
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex].sifre" value="@giris.sifre" class="form-control form-control-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        @foreach (var vpn in giris.VPNs)
+                                        {
+                                            <div class="mt-2">
+                                                <input type="hidden" name="VpnVm[@vpnIndex].Id" value="@vpn.Id" />
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>Host:</h6>
+                                                    </div>
+
+                                                    <div class="col text-center">
+                                                        <h6>Port:</h6>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <a href="#" onclick="gecmisiGoster(@vpn.Id, 'VPN', @Model.SelectedBelediyeId)"
+                                                        class="btn btn-outline-secondary btn-sm p-1">
+                                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex].Host" value="@vpn.Host" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex].Port" value="@vpn.Port" class="form-control form-control-sm" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>IP:</h6>
+                                                    </div>
+                                                    <div class="col text-center">
+                                                        <h6>Doğrulama:</h6>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex].IP" value="@vpn.IP" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col d-flex justify-content-center">
+                                                        <input type="checkbox" name="VpnVm[@vpnIndex].Dogrulama" value="true" @(vpn.Dogrulama ? "checked" : "") class="form-check-input" />
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                            vpnIndex++;
+                                        }
+
+                                    </li>
+                                    kaynakIndex++;
+                                }
+                            }
+                        </ul>
+
+                    </form>
+                </div>
+
+
+                <!-- forti -->
+
+
+
+
+                <div class="tab-pane fade" id="forti" role="tabpanel" aria-labelledby="forti-tab">
+                    <form asp-action="UpdateVPN" method="post">
+                        <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                        <ul class="list-group">
+                            @{
+                                int kaynakIndex1 = 0;
+                                int vpnIndex1 = 0;
+                            }
+                            @foreach (var item in Model.BelediyeFortiKayitlari)
+                            {
+                                foreach (var giris in item.KaynakGirisler)
+                                {
+                                    <li class="list-group-item list-group-item-action mb-1">
+
+                                        <input type="hidden" name="kaynakGirisVm[@kaynakIndex1].Id" value="@giris.Id" />
+                                        <input type="checkbox" name="selectedVPNKayit" value="@giris.Id" class="btn-check" id="vpn-check-@giris.Id" autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm"
+                                               for="vpn-check-@giris.Id"
+                                               style="padding: 1px 4px; border-width: 1px;">
+                                            <i class="fa-solid fa-trash fa-xs"></i>
+                                        </label>
+                                        <div class="mb-2">
+                                            <div class="row mb-1">
+                                                <div class="col text-center">
+                                                    <h6>Kullanıcı Adı:</h6>
+                                                </div>
+                                                <div class="col text-center">
+                                                    <h6>Şifre:</h6>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                                    class="btn btn-outline-secondary btn-sm p-1">
+                                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex1].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm" />
+                                                </div>
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex1].sifre" value="@giris.sifre" class="form-control form-control-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        @foreach (var vpn in giris.VPNs)
+                                        {
+                                            <div class="mt-2">
+                                                <input type="hidden" name="VpnVm[@vpnIndex1].Id" value="@vpn.Id" />
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>Host:</h6>
+                                                    </div>
+
+                                                    <div class="col text-center">
+                                                        <h6>Port:</h6>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <a href="#" onclick="gecmisiGoster(@vpn.Id, 'VPN', @Model.SelectedBelediyeId)"
+                                                        class="btn btn-outline-secondary btn-sm p-1">
+                                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex1].Host" value="@vpn.Host" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex1].Port" value="@vpn.Port" class="form-control form-control-sm" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>IP:</h6>
+                                                    </div>
+                                                    <div class="col text-center">
+                                                        <h6>Doğrulama:</h6>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex1].IP" value="@vpn.IP" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col d-flex justify-content-center">
+                                                        <input type="checkbox" name="VpnVm[@vpnIndex1].Dogrulama" value="true" @(vpn.Dogrulama ? "checked" : "") class="form-check-input" />
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                            vpnIndex1++;
+                                        }
+
+                                    </li>
+                                    kaynakIndex1++;
+                                }
+                            }
+                        </ul>
+
+                    </form>
+
+                </div>
+
+
+
+                <!-- windows -->
+                <div class="tab-pane fade" id="windows" role="tabpanel" aria-labelledby="windows-tab">
+                    <form asp-action="UpdateVPN" method="post">
+                        <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                        <ul class="list-group">
+                            @{
+                                int kaynakIndex2 = 0;
+                                int vpnIndex2 = 0;
+                            }
+                            @foreach (var item in Model.BelediyeWindowsVpnKaynaklari)
+                            {
+                                foreach (var giris in item.KaynakGirisler)
+                                {
+                                    <li class="list-group-item list-group-item-action mb-1">
+
+                                        <input type="hidden" name="kaynakGirisVm[@kaynakIndex2].Id" value="@giris.Id" />
+                                        <input type="checkbox" name="selectedVPNKayit" value="@giris.Id" class="btn-check" id="vpn-check-@giris.Id" autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm"
+                                               for="vpn-check-@giris.Id"
+                                               style="padding: 1px 4px; border-width: 1px;">
+                                            <i class="fa-solid fa-trash fa-xs"></i>
+                                        </label>
+                                        <div class="mb-2 ">
+                                            <div class="row mb-1">
+                                                <div class="col text-center">
+                                                    <h6>Kullanıcı Adı:</h6>
+                                                </div>
+                                                <div class="col text-center">
+                                                    <h6>Şifre:</h6>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                                    class="btn btn-outline-secondary btn-sm p-1">
+                                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex2].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm" />
+                                                </div>
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex2].sifre" value="@giris.sifre" class="form-control form-control-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        @foreach (var vpn in giris.VPNs)
+                                        {
+                                            <div class="mt-2">
+                                                <input type="hidden" name="VpnVm[@vpnIndex2].Id" value="@vpn.Id" />
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>Host:</h6>
+                                                    </div>
+
+                                                    <div class="col text-center">
+                                                        <h6>Port:</h6>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <a href="#" onclick="gecmisiGoster(@vpn.Id, 'VPN', @Model.SelectedBelediyeId)"
+                                                        class="btn btn-outline-secondary btn-sm p-1">
+                                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex2].Host" value="@vpn.Host" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex2].Port" value="@vpn.Port" class="form-control form-control-sm" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>IP:</h6>
+                                                    </div>
+                                                    <div class="col text-center">
+                                                        <h6>Doğrulama:</h6>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <input type="text" name="VpnVm[@vpnIndex2].IP" value="@vpn.IP" class="form-control form-control-sm" />
+                                                    </div>
+                                                    <div class="col d-flex justify-content-center">
+                                                        <input type="checkbox" name="VpnVm[@vpnIndex2].Dogrulama" value="true" @(vpn.Dogrulama ? "checked" : "") class="form-check-input" />
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                            vpnIndex2++;
+                                        }
+
+                                    </li>
+                                    kaynakIndex2++;
+                                }
+                            }
+                        </ul>
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+            <div class="card-footer p-2">
+                <button type="button" class="btn btn-success mt-2" id="VpnBtn">Kaydet</button>
+                <button type="button" class="btn btn-danger mt-2" onclick="silKayitlar('VPN')">Sil</button>
+            </div>
+        
+
+    </div>
+
+
+    <!--2.kart-->
+    <div class="card m-3" style="width: 25rem;  height:400px;">
+
+        <div class="card-header">
+            <h5 class="card-title text-center">
+                <i class="fa-solid fa-server"></i>
+                Service
+            </h5>
+
+        </div>
+        <!--navs tab-->
+        <div class="card-body p-2">
+            <ul class="nav nav-underline justify-content-center mb-3" id="maksTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="maks-tab" data-bs-toggle="tab" data-bs-target="#maks" type="button" role="tab">MAKS</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="megsis-tab" data-bs-toggle="tab" data-bs-target="#megsis" type="button" role="tab">MEGSIS</button>
+                </li>
+            </ul>
+            <!--içerik-->
+            <div class="tab-content  " id="ServiceTabContent" style="height:215px; overflow-y:auto">
+
+                <!--maks-->
+                <div class="tab-pane fade show active" id="maks" role="tabpanel" aria-labelledby="maks-tab">
+                    <form asp-action="UpdateVPN" method="post">
+                        <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                        <ul class="list-group">
+                            @{
+                                int kaynakIndex3 = 0;
+                                int serviceIndex = 0;
+                            }
+                            @foreach (var item in Model.BelediyeServiceMaksKayitlari)
+                            {
+                                foreach (var giris in item.KaynakGirisler)
+                                {
+                                    <li class="list-group-item list-group-item-action mb-1">
+
+                                        <input type="hidden" name="kaynakGirisVm[@kaynakIndex3].Id" value="@giris.Id" />
+
+                                        <input type="checkbox" name="selectedServiceKayit" value="@giris.Id" class="btn-check" id="service-check-@giris.Id" autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm"
+                                               for="service-check-@giris.Id"
+                                               style="padding: 1px 4px; border-width: 1px;">
+                                            <i class="fa-solid fa-trash fa-xs"></i>
+                                        </label>
+                                        <div class="mb-2">
+                                            <div class="row mb-1">
+                                                <div class="col text-center">
+                                                    <h6>Kullanıcı Adı:</h6>
+                                                </div>
+                                                <div class="col text-center">
+                                                    <h6>Şifre:</h6>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                                    class="btn btn-outline-secondary btn-sm p-1">
+                                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex3].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm" />
+                                                </div>
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex3].sifre" value="@giris.sifre" class="form-control form-control-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        @foreach (var service in giris.Services)
+                                        {
+                                            <div class="mt-2">
+                                                <input type="hidden" name="ServiceVm[@serviceIndex].Id" value="@service.Id" />
+                                                <input type="hidden" name="ServiceVm[@serviceIndex].ServiceName" value="@service.ServiceName" />
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>Endpoint:</h6>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <a href="#" onclick="gecmisiGoster(@service.Id, 'Service', @Model.SelectedBelediyeId)"
+                                                        class="btn btn-outline-secondary btn-sm p-1">
+                                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                                        </a>
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="row justify-content-center">
+                                                    <div class="col-7">
+                                                        <input type="text" name="ServiceVm[@serviceIndex].Endpoint" value="@service.Endpoint" class="form-control form-control-sm" />
+                                                    </div>
+
+                                                </div>
+
+
+                                            </div>
+                                            serviceIndex++;
+                                        }
+
+                                    </li>
+                                    kaynakIndex3++;
+                                }
+                            }
+                        </ul>
+
+                    </form>
+                </div>
+                <!--megsis-->
+                <div class="tab-pane fade " id="megsis" role="tabpanel" aria-labelledby="megsis-tab">
+                    <form asp-action="UpdateVPN" method="post">
+                        <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                        <ul class="list-group">
+                            @{
+                                int kaynakIndex4 = 0;
+                                int serviceIndex1 = 0;
+                            }
+                            @foreach (var item in Model.BelediyeServiceMegsisKayitlari)
+                            {
+                                foreach (var giris in item.KaynakGirisler)
+                                {
+                                    <li class="list-group-item list-group-item-action mb-1">
+
+                                        <input type="hidden" name="kaynakGirisVm[@kaynakIndex4].Id" value="@giris.Id" />
+                                        <input type="checkbox" name="selectedServiceKayit" value="@giris.Id" class="btn-check" id="service-check-@giris.Id" autocomplete="off">
+                                        <label class="btn btn-outline-secondary btn-sm"
+                                               for="service-check-@giris.Id"
+                                               style="padding: 1px 4px; border-width: 1px;">
+                                            <i class="fa-solid fa-trash fa-xs"></i>
+                                        </label>
+                                        <div class="mb-2">
+                                            <div class="row mb-1">
+                                                <div class="col text-center">
+                                                    <h6>Kullanıcı Adı:</h6>
+                                                </div>
+                                                <div class="col text-center">
+                                                    <h6>Şifre:</h6>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                                    class="btn btn-outline-secondary btn-sm p-1">
+                                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex4].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm" />
+                                                </div>
+                                                <div class="col">
+                                                    <input type="text" name="kaynakGirisVm[@kaynakIndex4].sifre" value="@giris.sifre" class="form-control form-control-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        @foreach (var service in giris.Services)
+                                        {
+                                            <div class="mt-2">
+                                                <input type="hidden" name="ServiceVm[@serviceIndex1].Id" value="@service.Id" />
+                                                <input type="hidden" name="ServiceVm[@serviceIndex1].ServiceName" value="@service.ServiceName" />
+                                                <div class="row">
+                                                    <div class="col text-center">
+                                                        <h6>Endpoint:</h6>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <a href="#" onclick="gecmisiGoster(@service.Id, 'Service', @Model.SelectedBelediyeId)"
+                                                        class="btn btn-outline-secondary btn-sm p-1">
+                                                            <i class="fa-solid fa-clock-rotate-left"></i>
+                                                        </a>
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="row justify-content-center">
+                                                    <div class="col-7">
+                                                        <input type="text" name="ServiceVm[@serviceIndex1].Endpoint" value="@service.Endpoint" class="form-control form-control-sm" />
+                                                    </div>
+
+                                                </div>
+
+
+                                            </div>
+                                            serviceIndex1++;
+                                        }
+
+                                    </li>
+                                    kaynakIndex4++;
+                                }
+                            }
+                        </ul>
+
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+        
+            <div class="card-footer p-2">
+                <button type="button" class="btn btn-success mt-2" id="serviceBtn">Kaydet</button>
+                <button type="button" class="btn btn-danger mt-2" onclick="silKayitlar('Services')">Sil</button>
+            </div>
+        
+    </div>
+
+    <!--3.kart-->
+    <div class="card m-3" style="width: 25rem;  height:400px;">
+        <div class="card-header p-2">
+            <h5 class="card-title text-center">
+                <i class="fa-solid fa-display"></i>
+                RDP
+            </h5>
+
+        </div>
+        <div class="card-body p-2 mb-3" style="overflow-y: auto">
+
+            <form asp-action="UpdateVPN" method="post" id="rdpForm">
+                <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                <ul class="list-group">
+                    @{
+                        int kaynakIndex5 = 0;
+                        int rdpIndex = 0;
+                    }
+                    @foreach (var item in Model.BelediyeRDPKayitlari)
+                    {
+
+                        foreach (var giris in item.KaynakGirisler)
+                        {
+
+
+                            <li class="list-group-item list-group-item-action mb-1">
+
+                                <input type="hidden" name="kaynakGirisVm[@kaynakIndex5].Id" value="@giris.Id" />
+
+                                <input type="checkbox" name="selectedRDPKayit" value="@giris.Id" class="btn-check" id="rdp-check-@giris.Id" autocomplete="off">
+                                <label class="btn btn-outline-secondary btn-sm"
+                                       for="rdp-check-@giris.Id"
+                                       style="padding: 1px 4px; border-width: 1px;">
+                                    <i class="fa-solid fa-trash fa-xs"></i>
+                                </label>
+                                <div class="mb-2">
+                                    <div class="row mb-1">
+                                        <div class="col text-center">
+                                            <h6>Kullanıcı Adı:</h6>
+                                        </div>
+                                        <div class="col text-center">
+                                            <h6>Şifre:</h6>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                            class="btn btn-outline-secondary btn-sm p-1">
+                                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndex5].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm text-center" />
+                                        </div>
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndex5].sifre" value="@giris.sifre" class="form-control form-control-sm text-center" />
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                @foreach (var rdp in giris.RDPs)
+                                {
+                                    <div class="mt-2">
+                                        <input type="hidden" name="RdpVm[@rdpIndex].Id" value="@rdp.Id" />
+
+                                        <div class="row">
+                                            <div class="col text-center">
+                                                <h6>IP:</h6>
+                                            </div>
+                                            <div class="col text-center">
+                                                <h6>VPN Doğrulama:</h6>
+                                            </div>
+                                            <div class="col-auto">
+                                                <a href="#" onclick="gecmisiGoster(@rdp.Id, 'RDP', @Model.SelectedBelediyeId)"
+                                                class="btn btn-outline-secondary btn-sm p-1">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col">
+                                                <input type="text" name="RdpVm[@rdpIndex].IP" value="@rdp.IP" class="form-control form-control-sm text-center" />
+                                            </div>
+                                            <div class="col d-flex justify-content-center">
+                                                <input type="checkbox"
+                                                name="RdpVm[@rdpIndex].VPN"
+                                                value="true"
+                                                @(rdp.VPN == true ? "checked" : "")
+                                                class="form-check-input" />
+                                            </div>
+
+
+                                        </div>
+                                    </div>
+                                    rdpIndex++;
+                                }
+                            </li>
+
+                            kaynakIndex5++;
+                        }
+                    }
+                </ul>
+
+            </form>
+        </div>
+     
+            <div class="card-footer p-2">
+                <button type="button" class="btn btn-success mt-2" id="RdpBtn">Kaydet</button>
+                <button type="button" class="btn btn-danger mt-2" onclick="silKayitlar('RDP')">Sil</button>
+            </div>
+        
+
+    </div>
+
+
+    <!--4.kart-->
+    <div class="card m-3" style="width: 25rem;  height:400px;">
+
+        <div class="card-header">
+            <h5 class="card-title text-center"><i class="fa-solid fa-database"></i> PostreSQL</h5>
+        </div>
+        <div class="card-body p-2 mb-3" style="overflow-y: auto">
+            <form asp-action="UpdateVPN" method="post" id="postgreForm">
+                <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                <ul class="list-group">
+                    @{
+                        int kaynakIndex6 = 0;
+                        int postgreIndex = 0;
+                    }
+                    @foreach (var item in Model.BelediyePostgreKayitlari)
+                    {
+                        foreach (var giris in item.KaynakGirisler)
+                        {
+                            <li class="list-group-item list-group-item-action mb-1">
+                                <input type="hidden" name="kaynakGirisVm[@kaynakIndex6].Id" value="@giris.Id" />
+                                <input type="checkbox" name="selectedPostgreKayit" value="@giris.Id" class="btn-check" id="postgre-check-@giris.Id" autocomplete="off">
+                                <label class="btn btn-outline-secondary btn-sm"
+                                       for="postgre-check-@giris.Id"
+                                       style="padding: 1px 4px; border-width: 1px;">
+                                    <i class="fa-solid fa-trash fa-xs"></i>
+                                </label>
+                                <div class="mb-2">
+                                    <div class="row mb-1">
+                                        <div class="col text-center">
+                                            <h6>Kullanıcı Adı:</h6>
+                                        </div>
+                                        <div class="col text-center">
+                                            <h6>Şifre:</h6>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                            class="btn btn-outline-secondary btn-sm p-1">
+                                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndex6].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm text-center" />
+                                        </div>
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndex6].sifre" value="@giris.sifre" class="form-control form-control-sm text-center" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @foreach (var postgre in giris.PostrgreSQLs)
+                                {
+                                    <div class="mt-2">
+                                        <input type="hidden" name="PostgreSQLVm[@postgreIndex].Id" value="@postgre.Id" />
+
+                                        <div class="row">
+                                            <div class="col text-center">
+                                                <h6>IP:</h6>
+                                            </div>
+                                            <div class="col text-center">
+                                                <h6>Port:</h6>
+                                            </div>
+                                            <div class="col-auto">
+                                                <a href="#" onclick="gecmisiGoster(@postgre.Id, 'PostrgreSQL', @Model.SelectedBelediyeId)"
+                                                class="btn btn-outline-secondary btn-sm p-1">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col">
+                                                <input type="text" name="PostgreSQLVm[@postgreIndex].IP" value="@postgre.IP" class="form-control form-control-sm text-center" />
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" name="PostgreSQLVm[@postgreIndex].Port" value="@postgre.Port" class="form-control form-control-sm text-center" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    postgreIndex++;
+                                }
+                            </li>
+                            kaynakIndex6++;
+                        }
+                    }
+                </ul>
+
+            </form>
+        </div>
+       
+            <div class="card-footer p-2">
+                <button type="button" class="btn btn-success mt-2" id="PostgreBtn">Kaydet</button>
+                <button type="button" class="btn btn-danger mt-2" onclick="silKayitlar('PostgreSQL')">Sil</button>
+            </div>
+        
+    </div>
+
+    <!--5.kart-->
+    <div class="card m-3" style="width: 25rem;  height:400px;">
+        <div class="card-header">
+            <h5 class="card-title text-center">
+                <i class="fa-solid fa-desktop"></i>
+                AnyDesk
+            </h5>
+        </div>
+
+        <div class="card-body p-2 mb-3" style="overflow-y: auto">
+            <form asp-action="UpdateVPN" method="post" id="anyForm">
+                <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                <ul class="list-group">
+                    @{
+                        int kaynakIndex7 = 0;
+                        int anyIndex = 0;
+                    }
+                    @foreach (var item in Model.BelediyeAnyKayitlari)
+                    {
+                        foreach (var giris in item.KaynakGirisler)
+                        {
+                            <li class="list-group-item list-group-item-action mb-1" >
+                                <input type="hidden" name="kaynakGirisVm[@kaynakIndex7].Id" value="@giris.Id" />
+                                <input type="checkbox" name="selectedAnyDeskKayit" value="@giris.Id" class="btn-check" id="any-check-@giris.Id" autocomplete="off">
+                                <label class="btn btn-outline-secondary btn-sm"
+                                       for="any-check-@giris.Id"
+                                       style="padding: 1px 4px; border-width: 1px;">
+                                    <i class="fa-solid fa-trash fa-xs"></i>
+                                </label>
+                                <div class="mb-2">
+                                  @*  <div class="row mb-1">
+                                       
+                                        <div class="col text-center">
+                                            <h6>Şifre:</h6>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                            class="btn btn-outline-secondary btn-sm p-1">
+                                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                            </a>
+                                        </div>
+
+                                    </div>
+                                    <div class="row">
+                                       
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndex7].sifre" value="@giris.sifre" class="form-control form-control-sm text-center" />
+                                        </div>
+                                    </div>*@
+                                </div>
+
+                                @foreach (var any in giris.Anys)
+                                {
+                                    <div class="mt-2">
+                                        <input type="hidden" name="AnysVm[@anyIndex].Id" value="@any.Id" />
+
+                                        <div class="row mb-1">
+
+                                            <div class="col text-center">
+                                                <h6>Şifre:</h6>
+                                            </div>
+                                            <div class="col-auto">
+                                                <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                                   class="btn btn-outline-secondary btn-sm p-1">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                </a>
+                                            </div>
+                                            <div class="col text-center">
+                                                <h6>Kod:</h6>
+                                            </div>
+
+                                            <div class="col-auto">
+                                                <a href="#" onclick="gecmisiGoster(@any.Id, 'Any', @Model.SelectedBelediyeId)"
+                                                   class="btn btn-outline-secondary btn-sm p-1">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                     @**  <div class="row">
+                                            <div class="col text-center">
+                                                <h6>Kod:</h6>
+                                            </div>
+
+                                            <div class="col-auto">
+                                                <a href="#" onclick="gecmisiGoster(@any.Id, 'Any', @Model.SelectedBelediyeId)"
+                                                class="btn btn-outline-secondary btn-sm p-1">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                </a>
+                                            </div>
+                                        </div>*@
+
+                                        <div class="row">
+                                            <div class="col">
+                                                <input type="text" name="kaynakGirisVm[@kaynakIndex7].sifre" value="@giris.sifre" class="form-control form-control-sm text-center" />
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" name="AnysVm[@anyIndex].Kod" value="@any.Kod" class="form-control form-control-sm text-center" />
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    anyIndex++;
+                                }
+                            </li>
+                            kaynakIndex7++;
+                        }
+                    }
+                </ul>
+
+
+            </form>
+        </div>
+ 
+            <div class="card-footer p-2">
+                <button type="button" class="btn btn-success mt-2" id="AnyBtn">Kaydet</button>
+            <button type="button" class="btn btn-danger mt-2" onclick="silKayitlar('AnyDesk')">Sil</button>
+        </div>
+        
+    </div>
+
+    <!--6.kart-->
+    <div class="card m-3" style="width: 25rem;  height:400px;">
+
+        <div class="card-header">
+            <h5 class="card-title text-center"><i class="fa-solid fa-globe"></i> GeoServer</h5>
+        </div>
+        <div class="card-body p-2 mb-3" style="overflow-y: auto">
+            <form asp-action="UpdateVPN" method="post" id="geoServerForm">
+                <input type="hidden" name="SelectedBelediyeId" value="@Model.SelectedBelediyeId" />
+
+                <ul class="list-group">
+                    @{
+                        int kaynakIndexGeo = 0;
+                        int GeoServer = 0;
+                    }
+                    @foreach (var item in Model.BelediyeGeoServerKayitlari)
+                    {
+                        foreach (var giris in item.KaynakGirisler)
+                        {
+                            <li class="list-group-item list-group-item-action mb-1">
+                                <input type="hidden" name="kaynakGirisVm[@kaynakIndexGeo].Id" value="@giris.Id" />
+                                <input type="checkbox" name="selectedGeoServerKayit" value="@giris.Id" class="btn-check" id="geo-check-@giris.Id" autocomplete="off">
+                                <label class="btn btn-outline-secondary btn-sm"
+                                       for="geo-check-@giris.Id"
+                                       style="padding: 1px 4px; border-width: 1px;">
+                                    <i class="fa-solid fa-trash fa-xs"></i>
+                                </label>
+                                <div class="mb-2">
+                                    <div class="row mb-1">
+                                        <div class="col text-center">
+                                            <h6>Kullanıcı Adı:</h6>
+                                        </div>
+                                        <div class="col text-center">
+                                            <h6>Şifre:</h6>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="#" onclick="gecmisiGoster(@giris.Id, 'KaynakGiris', @Model.SelectedBelediyeId)"
+                                               class="btn btn-outline-secondary btn-sm p-1">
+                                                <i class="fa-solid fa-clock-rotate-left"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndexGeo].KullaniciAdi" value="@giris.KullaniciAdi" class="form-control form-control-sm text-center" />
+                                        </div>
+                                        <div class="col">
+                                            <input type="text" name="kaynakGirisVm[@kaynakIndexGeo].sifre" value="@giris.sifre" class="form-control form-control-sm text-center" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @foreach (var server in giris.GeoServers)
+                                {
+                                    <div class="mt-2">
+                                        <input type="hidden" name="GeoServerVm[@GeoServer].Id" value="@server.Id" />
+
+                                        <div class="row">
+                                            <div class="col text-center">
+                                                <h6>IP:</h6>
+                                            </div>
+                                            <div class="col text-center">
+                                                <h6>Port:</h6>
+                                            </div>
+                                            <div class="col-auto">
+                                                <a href="#" onclick="gecmisiGoster(@server.Id, 'GeoServer', @Model.SelectedBelediyeId)"
+                                                   class="btn btn-outline-secondary btn-sm p-1">
+                                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col">
+                                                <input type="text" name="GeoServerVm[@GeoServer].IP" value="@server.IP" class="form-control form-control-sm text-center" />
+                                            </div>
+                                            <div class="col">
+                                                <input type="text" name="GeoServerVm[@GeoServer].Port" value="@server.Port" class="form-control form-control-sm text-center" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    GeoServer++;
+                                }
+                            </li>
+                            kaynakIndexGeo++;
+                        }
+                    }
+                </ul>
+
+            </form>
+        </div>
+        
+        <div class="card-footer p-2">
+            <button type="button" class="btn btn-success mt-2" id="GeoServerBtn">Kaydet</button>
+            <button type="button" class="btn btn-danger mt-2" onclick="silKayitlar('GeoServer')">Sil</button>
+        </div>
+        
+    </div>
+
+    <!--7.kart-->
+    <div class="card m-3" style="width:100%; height: 275px;">
+        <div class="card-header">
+            <h5 class="card-title text-center"><i class="fa-solid fa-notes-medical"></i> Notlar</h5>
+        </div>
+        <div class="card-body d-flex flex-column h-100">
+            <form asp-action="NotEkleVeyaGuncelle" method="post" id="notForm">
+
+                <input type="hidden" name="selectedBelediyeId" value="@Model.SelectedBelediyeId" />
+                <input type="hidden" id="noteId" name="noteId" value="@Model.BelediyeNotlari.FirstOrDefault()?.Id" />
+
+                <textarea id="noteTextarea" name="aciklama" class="form-control mb-2" style="height: 125px;">@Model.BelediyeNotlari.FirstOrDefault()?.Aciklama</textarea>
+
+            </form>
+
+
+        </div>
+        <div class="card-footer p-2">
+            <button type="button" class="btn btn-success mt-2" id="NotBtn">Kaydet</button>
+
+        </div>
+    </div>
+</div>
+
+
+<!--MODEL-->
+
+<div class="modal fade modal-lg" id="exampleModalCenter" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Güncelleme Geçmişi</h5>
+           
+            </div>
+            <div class="modal-body" id="modalContent">
+       
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    let currentEditingNote = null;
+
+    function editNote(element, id) {
+        currentEditingNote = element;
+        document.getElementById('noteTextarea').value = element.textContent.trim();
+        document.getElementById('noteId').value = id;
+    }
+
+    function addNewNote() {
+        currentEditingNote = null;
+        document.getElementById('noteTextarea').value = "";
+        document.getElementById('noteId').value = "";
+        document.getElementById('noteTextarea').focus();
+    }
+
+
+    function addNoteToList(text) {
+        const ul = document.getElementById('noteItems');
+        const li = document.createElement('li');
+        li.className = "list-group-item";
+        li.textContent = text;
+        li.onclick = function() { editNote(li, null); };
+        ul.appendChild(li);
+    }
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.querySelector('#serviceBtn');
+        btn.addEventListener('click', function() {
+       
+        const serviceTabContent = document.querySelector('#ServiceTabContent');
+        const activeTab = serviceTabContent.querySelector('.tab-pane.active');
+   
+        if (activeTab) {
+            const form = activeTab.querySelector('form');
+            if (form) {
+                form.submit();
+            }
+        }
+    });
+
+        const btnVpn = document.querySelector('#VpnBtn');
+        btnVpn.addEventListener('click', function(){
+            const VpnTabContent =document.querySelector('#vpnTabContent');
+            const activeTab = VpnTabContent.querySelector('.tab-pane.active');
+            if(activeTab){
+                const form = activeTab.querySelector('form');
+                if(form){
+                    form.submit();
+                }
+            }
+         
+        });
+
+        const btnRdp = document.querySelector('#RdpBtn');
+        btnRdp.addEventListener('click', function() {
+              const form = document.querySelector('#rdpForm');
+                if (form) {
+                    form.submit();
+              
+            }
+        });
+
+        const btnPostgre = document.querySelector('#PostgreBtn');
+        btnPostgre.addEventListener('click', function(){
+            const form =document.querySelector('#postgreForm');
+            if(form){
+                form.submit();
+            }
+        });
+
+        const btnAny = document.querySelector('#AnyBtn');
+        btnAny.addEventListener('click', function() {
+            const form = document.querySelector('#anyForm');
+            if (form) {
+                form.submit();
+            }
+        });
+
+        const btnNot = document.querySelector('#NotBtn');
+        btnNot.addEventListener('click', function() {
+            const form = document.querySelector('#notForm');
+            if (form) {
+                form.submit();
+            }
+        });
+
+        const btnGeoServer =document.querySelector('#GeoServerBtn');
+        btnGeoServer.addEventListener('click', function(){
+            const form = document.querySelector('#geoServerForm');
+            if(form){
+                form.submit();
+            }
+        });
+
+
+    });
+</script>
+
+<script>
+        function gecmisiGoster(id, tableName, belediyeId) {
+
+        $('#exampleModalCenter').modal('show');
+
+       
+        $.ajax({
+            url: '/Home/GetHistory',
+            type: 'GET',
+            data: {
+                tableName: tableName,
+                primaryKey: id
+            },
+            success: function(data) {
+                
+                $('#modalContent').html(data);
+            },
+            error: function() {
+                $('#modalContent').html(`
+                    <div class="alert alert-danger">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        Geçmiş kayıtlar yüklenirken hata oluştu.
+                    </div>
+                `);
+            }
+        });
+    }
+</script>
+
+<script>
+        function silKayitlar(kartTipi) {
+        var checkboxName = '';
+        switch(kartTipi) {
+            case 'GeoServer':
+                checkboxName = 'selectedGeoServerKayit';
+                break;
+            case 'PostgreSQL':
+                checkboxName = 'selectedPostgreKayit';
+                break;
+            case 'RDP':
+                checkboxName = 'selectedRDPKayit';
+                break;
+            case 'AnyDesk':
+                checkboxName = 'selectedAnyDeskKayit';
+                break;
+            case 'VPN':
+                checkboxName = 'selectedVPNKayit';
+                break;
+            case 'Services':
+                checkboxName = 'selectedServiceKayit';
+                break;
+            default:
+                checkboxName = 'selectedKaynakGiris';
+        }
+
+        var checkboxlar = document.querySelectorAll('input[name="' + checkboxName + '"]:checked');
+
+        if (checkboxlar.length === 0) {
+            alert('Lütfen silmek istediğiniz kayıtları seçin.');
+            return;
+        }
+
+        if (!confirm('Seçili ' + kartTipi + ' kayıtlarını silmek istediğinizden emin misiniz?')) {
+            return;
+        }
+        var seciliKayitlar = [];
+        checkboxlar.forEach(function(checkbox) {
+            seciliKayitlar.push(checkbox.value);
+        });
+
+        var formData = new FormData();
+        formData.append('kartTipi', kartTipi);
+        formData.append('ids', seciliKayitlar.join(','));
+
+        fetch('/Home/SilKayitlar', {
+            method: 'POST',
+            body: formData  
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Silme işlemi başarısız: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Hata oluştu: ' + error);
+        });
+    }
+</script>
