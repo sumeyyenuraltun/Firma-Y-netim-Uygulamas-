@@ -6,7 +6,7 @@ Görev takibi yapılabilen, göreve yönelik güncelleme işlemlerinin olduğu k
 <img width="1894" height="850" alt="image" src="https://github.com/user-attachments/assets/21dfa9ca-2d63-4217-a020-c94ecd3937f9" />
 Yukarıdaki kısımdan farkı admin yetkisi olan kişi görev ekleyebilip güncelleme yapabiliyorken, admin yetkisi olmayan güncelleme yapamıyor.(Authorization)
 <img width="1895" height="862" alt="image" src="https://github.com/user-attachments/assets/47d76476-b594-4937-bc69-2fc142fd374b" />
-
+Dosya ekleme
 <img width="1892" height="866" alt="image" src="https://github.com/user-attachments/assets/e3fbc1b0-9b6f-4ab4-bf55-1dd4394f2657" />
 
 
